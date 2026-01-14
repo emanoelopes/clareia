@@ -15,6 +15,8 @@ import numpy as np
 import pickle
 from src.openai_interpreter import criar_rodape_sidebar
 
+from src.utilidades import carregar_dados_uci_cached
+
 st.set_page_config(
     page_title="Análise Exploratória dos Dados - UCI",
     page_icon="📊",
@@ -22,37 +24,20 @@ st.set_page_config(
     initial_sidebar_state="expanded",
     )
 
-st.title("Informações Básicas do Conjunto de Dados UCI")
+st.title("Análise Exploratória de Dados (EDA) - UCI")
 st.divider()
 
 """
 O UCI Machine Learning Repository é uma fonte valiosa de conjuntos de dados para a comunidade de aprendizado de máquina, promovendo a pesquisa e o avanço na área de ciência de dados.
 """
 
-datasets_uci_path = Path(__file__).parent.parents[1] / 'datasets' / 'uci_data'
-#st.write(f"Path dos datasets: {datasets_uci_path}")
-
-# Português
-por_path = os.path.join(datasets_uci_path, 'student-por.csv')
-por = pd.read_csv(por_path, sep=';')
-# Matemática
-mat_path = os.path.join(datasets_uci_path, 'student-mat.csv')
-mat = pd.read_csv(mat_path, sep=';')
-
-# Adicionando coluna com o conjunto de dados de origem
-mat['origem'] = 'mat'
-por['origem'] = 'por'
-
-# Concatenando os dataframes
-
-@st.cache_data(ttl=3600)  # Cache por 1 hora
-def concat():
-    df = pd.concat([mat, por])
-    return df
-
-df = concat()
-
-st.session_state['df_uci'] = df
+# Carregar dados usando a função centralizada e resiliente
+try:
+    df = carregar_dados_uci_cached()
+    st.session_state['df_uci'] = df
+except Exception as e:
+    st.error(f"❌ Erro crítico: Não foi possível carregar os dados UCI. {e}")
+    st.stop()
 # Transformando valores e tipos de dados
 df['traveltime'] = df['traveltime'].map({1: '<15m', 2: '15-30m', 3: '30-1h', 4: '>1h'}).astype(str)
 df['studytime'] = df['studytime'].map({1: '<2h', 2: '2-5h', 3: '5-10h', 4: '>10h'}).astype(str)
