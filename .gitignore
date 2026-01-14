@@ -216,3 +216,10 @@ datasets/uci_data/*
 # OS
 .DS_Store
 Thumbs.db
+# Local environment artifacts
+share/
+bin/
+include/
+lib/
+lib64/
+pyvenv.cfg
