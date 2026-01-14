@@ -1,7 +1,7 @@
 #!/bin/bash
 # Script para instalar dependências em diferentes sistemas
 
-echo "Instalando dependências do SIDA..."
+echo "Instalando dependências do Clareia..."
 
 # Verificar se Python 3.9+ está instalado
 python3 --version

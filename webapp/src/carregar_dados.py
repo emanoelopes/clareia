@@ -1,33 +1,74 @@
-# src/carregar_dados.py
 import pandas as pd
 from pathlib import Path
 import pickle
 import os
 
+def is_lfs_pointer(file_path):
+    """Verifica se um arquivo é um ponteiro do Git LFS"""
+    try:
+        if not os.path.exists(file_path):
+            return False
+            
+        # Pointers are small
+        if os.path.getsize(file_path) > 1024:
+            return False
+            
+        with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+            first_line = f.readline()
+            return first_line.startswith('version https://git-lfs.github.com/spec/v1')
+    except:
+        return False
+
 def carregar_uci_dados(pickle_path: str = "../uci_dataframe.pkl") -> pd.DataFrame:
-    """Carrega dados UCI processados do arquivo pickle"""
+    """Carrega dados UCI processados do arquivo pickle ou carrega dados brutos se não encontrar"""
     # Tentar diferentes caminhos para o arquivo pickle
     possible_paths = [
         pickle_path,
         f"../{pickle_path}",
         f"../../{pickle_path}",
-        Path(__file__).parent.parents[1] / "uci_dataframe.pkl"
+        Path(__file__).parent.parents[1] / "uci_dataframe.pkl",
+        Path(__file__).parent.parents[1] / "uci.pkl",
+        Path.cwd() / "uci_dataframe.pkl",
+        Path.cwd() / "uci.pkl"
     ]
     
     df = None
     for path in possible_paths:
         p = Path(path)
-        if p.is_file():
+        if p.is_file() and p.stat().st_size > 1000:  # Verificar se arquivo não está vazio (mais de 1KB)
             try:
                 with p.open("rb") as f:
                     df = pickle.load(f)
-                if isinstance(df, pd.DataFrame):
+                if isinstance(df, pd.DataFrame) and not df.empty:
+                    print(f"✅ Dados UCI carregados do pickle: {p} ({df.shape})")
                     break
+                else:
+                    print(f"⚠️ Pickle {p} está vazio ou inválido")
+                    df = None
             except Exception as e:
+                print(f"⚠️ Erro ao carregar pickle {p}: {e}")
                 continue
     
-    if df is None:
-        raise FileNotFoundError(f"Arquivo uci_dataframe.pkl não encontrado em nenhum dos caminhos: {possible_paths}")
+    # Se não encontrou o pickle válido, tentar carregar dados brutos
+    if df is None or df.empty:
+        print("🔄 Arquivo pickle não encontrado ou inválido. Carregando dados brutos UCI...")
+        try:
+            df = carregar_dados_uci_raw()
+            print(f"✅ Dados UCI brutos carregados: {df.shape}")
+            
+            # Tentar salvar o pickle para próximas execuções
+            try:
+                pickle_path_final = Path(__file__).parent.parents[1] / "uci_dataframe.pkl"
+                with open(pickle_path_final, 'wb') as f:
+                    pickle.dump(df, f, protocol=pickle.HIGHEST_PROTOCOL)
+                print(f"💾 Dados salvos em pickle: {pickle_path_final}")
+            except Exception as e:
+                print(f"⚠️ Não foi possível salvar pickle: {e}")
+        except Exception as e:
+            import traceback
+            error_detail = traceback.format_exc()
+            print(f"ERRO AO CARREGAR DADOS UCI: {error_detail}")
+            raise FileNotFoundError(f"Não foi possível carregar dados UCI (pickle ou brutos): {e}\n\nDetalhes: {error_detail}")
     
     return df
 
@@ -81,10 +122,14 @@ def carregar_dados_uci_raw():
     
     # Português
     por_path = os.path.join(datasets_path, 'student-por.csv')
+    if is_lfs_pointer(por_path):
+        raise ValueError(f"O arquivo {por_path} é um ponteiro Git LFS. Execute 'git lfs pull' localmente.")
     por = pd.read_csv(por_path, sep=';')
     
     # Matemática
     mat_path = os.path.join(datasets_path, 'student-mat.csv')
+    if is_lfs_pointer(mat_path):
+        raise ValueError(f"O arquivo {mat_path} é um ponteiro Git LFS. Execute 'git lfs pull' localmente.")
     mat = pd.read_csv(mat_path, sep=';')
     
     # Adicionando coluna com o conjunto de dados de origem
@@ -125,6 +170,10 @@ def carregar_dados_oulad_raw():
             df_name = os.path.splitext(filename)[0]
             try:
                 config = file_configs.get(df_name, {})
+                if is_lfs_pointer(file_path):
+                    print(f"⚠️ {df_name} é um ponteiro Git LFS. Execute 'git lfs pull'.")
+                    continue
+                    
                 dataframes_oulad[df_name] = pd.read_csv(
                     file_path, 
                     sep=',', 

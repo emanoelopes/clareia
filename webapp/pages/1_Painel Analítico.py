@@ -123,12 +123,7 @@ st.markdown("""
    - Inclui campo para nome do aluno
    - Análise personalizada para sua turma
 
-2. **Configure sua OpenAI API Key**
-   - Permite interpretação automática dos gráficos
-   - Insights em linguagem acessível
-   - Foco em ações práticas
-
-3. **Analise os Resultados**
+2. **Analise os Resultados**
    - Gráficos com rótulos em português
    - Interpretações para gestores escolares
    - Sugestões de intervenção pedagógica
@@ -137,26 +132,24 @@ st.markdown("""
 
 1. **Estrutura Modular**
    - `utilidades.py`: Lógica de negócio
-   - `openai_interpreter.py`: Interpretação IA
-   - `home.py`: Landing page
+   - `home.py`: Página inicial
    - `1_Painel Analítico.py`: Painel Analítico consolidado
 
 2. **Extensibilidade**
    - Fácil adição de novos datasets
    - Novos tipos de análise
-   - Integração com outras APIs
 """)
 
 # Rodapé
 st.markdown("---")
 st.markdown("### ℹ️ Sobre o Sistema")
 st.caption("""
-**SIDA - Sistema Inteligente de Análise Educacional**
+**Clareia - Sistema Inteligente de Análise de Dados Educacionais**
 
 Mestrado em Tecnologia Educacional  
 Programa de Pós-Graduação em Tecnologias Educacionais (PPGTE)  
 Instituto UFC Virtual (IUVI)  
 Universidade Federal do Ceará (UFC)
 
-Versão 0.1.1 - 2025
+Versão 0.1.1 - 2026
 """)

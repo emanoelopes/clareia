@@ -1,7 +1,7 @@
 [project]
-name = "sida"
+name = "Clareia"
 version = "0.1.1"
-description = "Sistema de Identificação de Dificuldades de Aprendizagem (SIDA)"
+description = "Sistema de Análise de Dados Educacionais"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [

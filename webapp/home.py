@@ -25,7 +25,7 @@ from src.openai_interpreter import criar_sidebar_landpage
 
 # Configuração da página
 st.set_page_config(
-    page_title="SIDA - Sistema de Análise Educacional",
+    page_title="Clareia - Sistema de Análise de Dados Educacionais",
     page_icon="📊",
     layout="wide"
 )
@@ -34,8 +34,7 @@ st.set_page_config(
 criar_sidebar_landpage()
 
 # Título principal
-st.title("📊 Sistema de Análise de Dados Educacionais")
-st.markdown("### Análise Inteligente com IA")
+st.title("📊 Clareia - Sistema de Análise de Dados Educacionais")
 
 # Seção 1: Download do Template
 st.markdown("## 📥 Passo 1: Baixe o Template")
@@ -71,37 +70,51 @@ with col2:
 # Botão para download do template pré-gerado
 if st.button("📥 Baixar Template Unificado", type="primary"):
     import os
+    import zipfile
     
-    # Verificar se o arquivo existe
     template_path = "template_unificado_features.xlsx"
+    df_template = None
+    
+    # Tentar carregar do disco primeiro
     if os.path.exists(template_path):
-        st.session_state.template_downloaded = True
-        
-        # Carregar e mostrar preview
-        df_template = pd.read_excel(template_path)
+        try:
+            df_template = pd.read_excel(template_path, engine='openpyxl')
+            st.session_state.template_downloaded = True
+        except (zipfile.BadZipFile, Exception) as e:
+            st.warning(f"⚠️ O template em disco está corrompido ou é inválido ({e}). Gerando um novo template dinamicamente...")
+            df_template = gerar_template_unificado()
+    else:
+        st.info("ℹ️ Template não encontrado em disco. Gerando um novo template...")
+        df_template = gerar_template_unificado()
+
+    if df_template is not None and not df_template.empty:
         feature_cols = [col for col in df_template.columns if col not in ['nome_aluno', 'resultado_final']]
-        st.success(f"✅ Template unificado disponível! Inclui {len(feature_cols)} features: {', '.join(feature_cols)}")
+        st.success(f"✅ Template unificado preparado! Inclui {len(feature_cols)} features: {', '.join(feature_cols)}")
         
         st.markdown("**Preview do Template Unificado:**")
         st.dataframe(df_template.head(), use_container_width=True)
         
-        # Download do arquivo
-        with open(template_path, "rb") as file:
+        # Converter para bytes para o botão de download
+        excel_data = converter_template_para_excel(df_template)
+        
+        if excel_data:
             st.download_button(
                 "⬇️ Baixar Template Excel",
-                data=file.read(),
+                data=excel_data,
                 file_name="template_analise_educacional.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 key='download_unified_template'
             )
+        else:
+            st.error("❌ Falha ao converter o template para Excel.")
     else:
-        st.error("❌ Template não encontrado. Execute o sistema para gerar o template.")
+        st.error("❌ Não foi possível gerar ou carregar o template.")
 
 # Seção 2: Upload e Análise
 st.markdown("## 📤 Passo 2: Envie o Template Preenchido")
 
 uploaded_file = st.file_uploader(
-    "Faça upload do template preenchido:",
+    "Envie a planilha preenchido:",
     type=['xlsx', 'csv'],
     help="Template com dados dos alunos preenchidos"
 )
@@ -110,7 +123,7 @@ if uploaded_file:
     try:
         # Carregar dados
         if uploaded_file.name.endswith('.xlsx'):
-            df_usuario = pd.read_excel(uploaded_file)
+            df_usuario = pd.read_excel(uploaded_file, engine='openpyxl')
         else:
             df_usuario = pd.read_csv(uploaded_file)
         
@@ -140,7 +153,11 @@ if uploaded_file:
             st.error(f"❌ {msg}")
             
     except Exception as e:
-        st.error(f"Erro ao processar arquivo: {e}")
+        import zipfile
+        if "BadZipFile" in str(e) or isinstance(e, zipfile.BadZipFile):
+            st.error("❌ Erro: O arquivo enviado não é um arquivo Excel válido ou está corrompido. Certifique-se de que você baixou o template corretamente.")
+        else:
+            st.error(f"Erro ao processar arquivo: {e}")
 
 # Seção 3: Resultados (se disponíveis)
 if 'analise_resultados' in st.session_state and 'user_data_uploaded' in st.session_state:
@@ -152,7 +169,7 @@ if 'analise_resultados' in st.session_state and 'user_data_uploaded' in st.sessi
 st.markdown("---")
 st.markdown("### ℹ️ Sobre o Sistema")
 st.caption("""
-**SIDA - Sistema Inteligente de Análise Educacional**
+**Clareia - Sistema Inteligente de Análise de Dados Educacionais**
 
 Mestrado em Tecnologia Educacional  
 Programa de Pós-Graduação em Tecnologias Educacionais (PPGTE)  

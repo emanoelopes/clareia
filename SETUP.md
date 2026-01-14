@@ -1,4 +1,4 @@
-# Guia de Configuração do SIDA
+# Guia de Configuração do Clareia
 
 ## Pré-requisitos
 - Python 3.9 ou superior

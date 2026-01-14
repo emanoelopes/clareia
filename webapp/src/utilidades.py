@@ -20,12 +20,30 @@ def leitura_oulad_data():
 @st.cache_data(ttl=3600)  # Cache por 1 hora
 def carregar_dados_uci_cached():
     """Carrega dados UCI com cache"""
-    return carregar_uci_dados()
+    try:
+        df = carregar_uci_dados()
+        if df is None or df.empty:
+            st.error("⚠️ Dados UCI carregados estão vazios ou None")
+        return df
+    except Exception as e:
+        st.error(f"❌ Erro ao carregar dados UCI: {e}")
+        import traceback
+        print(f"ERRO CARREGAR UCI CACHED: {traceback.format_exc()}")
+        raise
 
 @st.cache_data(ttl=3600)  # Cache por 1 hora
 def carregar_dados_oulad_cached():
     """Carrega dados OULAD com cache"""
-    return carregar_oulad_dados()
+    try:
+        df = carregar_oulad_dados()
+        if df is None or df.empty:
+            st.error("⚠️ Dados OULAD carregados estão vazios ou None")
+        return df
+    except Exception as e:
+        st.error(f"❌ Erro ao carregar dados OULAD: {e}")
+        import traceback
+        print(f"ERRO CARREGAR OULAD CACHED: {traceback.format_exc()}")
+        raise
 
 def carregar_dados_dashboard():
     """Carrega os dados processados para o painel analítico com cache"""
@@ -53,7 +71,8 @@ def obter_metricas_principais_uci():
     """Retorna métricas principais do dataset UCI calculadas dinamicamente"""
     try:
         df_uci = carregar_dados_uci_cached()
-        if df_uci.empty:
+        if df_uci is None or df_uci.empty:
+            st.error("⚠️ Erro: Dados UCI não puderam ser carregados ou estão vazios.")
             return {
                 'total_estudantes': 0,
                 'media_nota_final': 0,
@@ -116,7 +135,11 @@ def obter_metricas_principais_uci():
             'estudantes_alcool_alto': round(alcool_alto, 1)
         }
     except Exception as e:
-        st.warning(f"Erro ao calcular métricas UCI: {e}")
+        import traceback
+        error_msg = f"Erro ao calcular métricas UCI: {str(e)}"
+        st.error(f"❌ {error_msg}")
+        st.exception(e)  # Mostra o traceback completo
+        print(f"ERRO DETALHADO UCI: {traceback.format_exc()}")
         return {
             'total_estudantes': 0,
             'media_nota_final': 0,
@@ -219,7 +242,11 @@ def obter_metricas_principais_oulad():
             'estudantes_reprovados': round(estudantes_reprovados, 1)
         }
     except Exception as e:
-        st.warning(f"Erro ao calcular métricas OULAD: {e}")
+        import traceback
+        error_msg = f"Erro ao calcular métricas OULAD: {str(e)}"
+        st.error(f"❌ {error_msg}")
+        st.exception(e)  # Mostra o traceback completo
+        print(f"ERRO DETALHADO OULAD: {traceback.format_exc()}")
         return {
             'total_estudantes': 0,
             'taxa_aprovacao': 0,
@@ -391,9 +418,7 @@ def exibir_cartoes_informativos():
     metricas_uci = obter_metricas_principais_uci()
     metricas_oulad = obter_metricas_principais_oulad()
     
-    # Cartões principais
-    st.markdown("## 📊 Métricas Principais")
-    
+    # Cartões principais (título deve ser adicionado pela página que chama esta função)
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
@@ -1944,7 +1969,7 @@ def criar_grafico_radar_aluno(df_usuario: pd.DataFrame, nome_aluno: str = None) 
         return {}
 
 def exibir_resultados_com_ia(resultados: dict, df_usuario: pd.DataFrame):
-    """Exibe resultados com interpretação via OpenAI"""
+    """Exibe resultados com interpretação automática"""
     
     st.markdown("## 📊 Resultados da Análise")
     
@@ -1974,7 +1999,7 @@ def exibir_resultados_com_ia(resultados: dict, df_usuario: pd.DataFrame):
         fig_dist = resultados['graficos']['distribuicoes']['distribuicao_resultados']
         st.pyplot(fig_dist)
         
-        # Interpretação via OpenAI
+        # Interpretação automática
         contexto = {
             'total_alunos': len(df_usuario),
             'aprovados': (df_usuario['resultado_final'] >= 5.0).sum(),
@@ -1982,40 +2007,9 @@ def exibir_resultados_com_ia(resultados: dict, df_usuario: pd.DataFrame):
             'media_geral': df_usuario['resultado_final'].mean()
         }
         
-        # Verificar se usuário quer usar IA
-        usar_ia = st.session_state.get('usar_ia', True)
-        
-        if usar_ia and 'openai_key' in st.session_state and st.session_state.get('api_valida', False):
-            # Usar OpenAI se disponível e válida
-            try:
-                from .openai_interpreter import interpretar_grafico
-                interpretacao = interpretar_grafico('distribuicao_resultados', contexto)
-                st.info(f"💡 **Interpretação IA**: {interpretacao}")
-            except Exception as e:
-                # Fallback para interpretação estática
-                interpretacao = """
-                Este gráfico mostra a distribuição de resultados da turma. 
-                Uma boa distribuição tem mais alunos aprovados que reprovados.
-                Se houver muitos reprovados, considere estratégias de apoio pedagógico.
-                """
-                st.info(f"💡 **Interpretação**: {interpretacao}")
-        elif usar_ia and 'openai_key' in st.session_state and not st.session_state.get('api_valida', False):
-            # API configurada mas não testada
-            st.warning("⚠️ Chave OpenAI configurada mas não testada. Teste a chave na sidebar.")
-            interpretacao = """
-            Este gráfico mostra a distribuição de resultados da turma. 
-            Uma boa distribuição tem mais alunos aprovados que reprovados.
-            Se houver muitos reprovados, considere estratégias de apoio pedagógico.
-            """
-            st.info(f"💡 **Interpretação**: {interpretacao}")
-        else:
-            # Interpretação estática
-            interpretacao = """
-            Este gráfico mostra a distribuição de resultados da turma. 
-            Uma boa distribuição tem mais alunos aprovados que reprovados.
-            Se houver muitos reprovados, considere estratégias de apoio pedagógico.
-            """
-            st.info(f"💡 **Interpretação**: {interpretacao}")
+        from .openai_interpreter import gerar_interpretacao_traduzida
+        interpretacao = gerar_interpretacao_traduzida('distribuicao_resultados', contexto)
+        st.info(f"💡 **Interpretação**: {interpretacao}")
     
     # Histograma de Distribuição das Notas Finais
     st.markdown("### 📊 Histograma de Distribuição das Notas Finais")
@@ -2077,40 +2071,12 @@ def exibir_resultados_com_ia(resultados: dict, df_usuario: pd.DataFrame):
             'distribuicao': 'normal' if abs(media_notas - mediana_notas) < 0.5 else 'assimétrica'
         }
         
-        # Verificar se usuário quer usar IA
-        usar_ia = st.session_state.get('usar_ia', True)
-        
-        if usar_ia and 'openai_key' in st.session_state and st.session_state.get('api_valida', False):
-            # Usar OpenAI se disponível e válida
-            try:
-                from .openai_interpreter import interpretar_grafico
-                interpretacao_hist = interpretar_grafico('histograma_notas', contexto_hist)
-                st.info(f"💡 **Interpretação IA**: {interpretacao_hist}")
-            except Exception as e:
-                # Fallback para interpretação estática
-                interpretacao_hist = f"""
-                Este histograma mostra a distribuição das notas finais da turma. 
-                A média de {media_notas:.2f} e mediana de {mediana_notas:.2f} indicam o desempenho central.
-                {((df_usuario['resultado_final'] >= 5.0).sum() / len(df_usuario) * 100):.1f}% dos alunos foram aprovados.
-                """
-                st.info(f"💡 **Interpretação**: {interpretacao_hist}")
-        elif usar_ia and 'openai_key' in st.session_state and not st.session_state.get('api_valida', False):
-            # API configurada mas não testada
-            st.warning("⚠️ Chave OpenAI configurada mas não testada. Teste a chave na sidebar.")
-            interpretacao_hist = f"""
-            Este histograma mostra a distribuição das notas finais da turma. 
-            A média de {media_notas:.2f} e mediana de {mediana_notas:.2f} indicam o desempenho central.
-            {((df_usuario['resultado_final'] >= 5.0).sum() / len(df_usuario) * 100):.1f}% dos alunos foram aprovados.
-            """
-            st.info(f"💡 **Interpretação**: {interpretacao_hist}")
-        else:
-            # Interpretação estática
-            interpretacao_hist = f"""
-            Este histograma mostra a distribuição das notas finais da turma. 
-            A média de {media_notas:.2f} e mediana de {mediana_notas:.2f} indicam o desempenho central.
-            {((df_usuario['resultado_final'] >= 5.0).sum() / len(df_usuario) * 100):.1f}% dos alunos foram aprovados.
-            """
-            st.info(f"💡 **Interpretação**: {interpretacao_hist}")
+        # Interpretação automática
+        from .openai_interpreter import gerar_interpretacao_traduzida
+        interpretacao_hist = gerar_interpretacao_traduzida('histograma_notas', contexto_hist)
+        # Adicionar informações específicas do histograma
+        interpretacao_hist += f"\n\nA média de {media_notas:.2f} e mediana de {mediana_notas:.2f} indicam o desempenho central. {((df_usuario['resultado_final'] >= 5.0).sum() / len(df_usuario) * 100):.1f}% dos alunos foram aprovados."
+        st.info(f"💡 **Interpretação**: {interpretacao_hist}")
     
     # 3. Gráficos de Distribuição Numérica
     st.markdown("### 📊 Distribuições Numéricas")
@@ -2126,58 +2092,26 @@ def exibir_resultados_com_ia(resultados: dict, df_usuario: pd.DataFrame):
                 st.pyplot(graficos_distribuicao['distribuicao_faltas'])
                 
                 # Interpretação das faltas
-                if usar_ia and 'openai_key' in st.session_state and st.session_state.get('api_valida', False):
-                    try:
-                        from .openai_interpreter import interpretar_grafico
-                        contexto_faltas = {
-                            'media_faltas': df_usuario['faltas'].mean() if 'faltas' in df_usuario.columns else 0,
-                            'total_alunos': len(df_usuario)
-                        }
-                        interpretacao = interpretar_grafico('distribuicao_faltas', contexto_faltas)
-                        st.info(f"💡 **Interpretação IA**: {interpretacao}")
-                    except:
-                        interpretacao = """
-                        Este gráfico mostra a distribuição de faltas da turma. 
-                        Muitas faltas podem indicar problemas de frequência ou engajamento.
-                        Considere estratégias de acompanhamento para alunos com muitas faltas.
-                        """
-                        st.info(f"💡 **Interpretação**: {interpretacao}")
-                else:
-                    interpretacao = """
-                    Este gráfico mostra a distribuição de faltas da turma. 
-                    Muitas faltas podem indicar problemas de frequência ou engajamento.
-                    Considere estratégias de acompanhamento para alunos com muitas faltas.
-                    """
-                    st.info(f"💡 **Interpretação**: {interpretacao}")
+                from .openai_interpreter import gerar_interpretacao_traduzida
+                contexto_faltas = {
+                    'media_faltas': df_usuario['faltas'].mean() if 'faltas' in df_usuario.columns else 0,
+                    'total_alunos': len(df_usuario)
+                }
+                interpretacao = gerar_interpretacao_traduzida('distribuicao_faltas', contexto_faltas)
+                st.info(f"💡 **Interpretação**: {interpretacao}")
         
         with col2:
             if 'distribuicao_nota_2bim' in graficos_distribuicao:
                 st.pyplot(graficos_distribuicao['distribuicao_nota_2bim'])
                 
                 # Interpretação da nota do 2º bimestre
-                if usar_ia and 'openai_key' in st.session_state and st.session_state.get('api_valida', False):
-                    try:
-                        from .openai_interpreter import interpretar_grafico
-                        contexto_nota = {
-                            'media_nota_2bim': df_usuario['nota_2bim'].mean() if 'nota_2bim' in df_usuario.columns else 0,
-                            'total_alunos': len(df_usuario)
-                        }
-                        interpretacao = interpretar_grafico('distribuicao_nota_2bim', contexto_nota)
-                        st.info(f"💡 **Interpretação IA**: {interpretacao}")
-                    except:
-                        interpretacao = """
-                        Este gráfico mostra a distribuição das notas do 2º bimestre. 
-                        Notas baixas podem indicar necessidade de reforço pedagógico.
-                        Use para identificar alunos que precisam de apoio adicional.
-                        """
-                        st.info(f"💡 **Interpretação**: {interpretacao}")
-                else:
-                    interpretacao = """
-                    Este gráfico mostra a distribuição das notas do 2º bimestre. 
-                    Notas baixas podem indicar necessidade de reforço pedagógico.
-                    Use para identificar alunos que precisam de apoio adicional.
-                    """
-                    st.info(f"💡 **Interpretação**: {interpretacao}")
+                from .openai_interpreter import gerar_interpretacao_traduzida
+                contexto_nota = {
+                    'media_nota_2bim': df_usuario['nota_2bim'].mean() if 'nota_2bim' in df_usuario.columns else 0,
+                    'total_alunos': len(df_usuario)
+                }
+                interpretacao = gerar_interpretacao_traduzida('distribuicao_nota_2bim', contexto_nota)
+                st.info(f"💡 **Interpretação**: {interpretacao}")
     
     # 4. Gráfico de Linhas - Análise por Região
     st.markdown("### 📊 Análise por Região - Média das Notas Finais")
@@ -2186,30 +2120,14 @@ def exibir_resultados_com_ia(resultados: dict, df_usuario: pd.DataFrame):
         st.pyplot(grafico_linhas)
         
         # Interpretação do gráfico de linhas
-        if usar_ia and 'openai_key' in st.session_state and st.session_state.get('api_valida', False):
-            try:
-                from .openai_interpreter import interpretar_grafico
-                contexto_linhas = {
-                    'regioes': df_usuario['regiao'].unique().tolist() if 'regiao' in df_usuario.columns else [],
-                    'total_alunos': len(df_usuario),
-                    'media_geral': df_usuario['resultado_final'].mean()
-                }
-                interpretacao = interpretar_grafico('grafico_linhas_regiao', contexto_linhas)
-                st.info(f"💡 **Interpretação IA**: {interpretacao}")
-            except:
-                interpretacao = """
-                Este gráfico mostra a média das notas finais por região, categorizada por nível de faltas.
-                Linhas mais altas indicam melhor desempenho. Use para identificar padrões regionais
-                e a relação entre frequência e desempenho acadêmico.
-                """
-                st.info(f"💡 **Interpretação**: {interpretacao}")
-        else:
-            interpretacao = """
-            Este gráfico mostra a média das notas finais por região, categorizada por nível de faltas.
-            Linhas mais altas indicam melhor desempenho. Use para identificar padrões regionais
-            e a relação entre frequência e desempenho acadêmico.
-            """
-            st.info(f"💡 **Interpretação**: {interpretacao}")
+        from .openai_interpreter import gerar_interpretacao_traduzida
+        contexto_linhas = {
+            'regioes': df_usuario['regiao'].unique().tolist() if 'regiao' in df_usuario.columns else [],
+            'total_alunos': len(df_usuario),
+            'media_geral': df_usuario['resultado_final'].mean()
+        }
+        interpretacao = gerar_interpretacao_traduzida('grafico_linhas_regiao', contexto_linhas)
+        st.info(f"💡 **Interpretação**: {interpretacao}")
     
     # 5. Gráfico Radar - Comparação Individual
     st.markdown("### 🎯 Análise Individual - Gráfico Radar")
@@ -2232,38 +2150,16 @@ def exibir_resultados_com_ia(resultados: dict, df_usuario: pd.DataFrame):
             st.pyplot(grafico_radar['radar_comparacao_aluno'])
             
             # Interpretação do gráfico radar
-            if usar_ia and 'openai_key' in st.session_state and st.session_state.get('api_valida', False):
-                try:
-                    from .openai_interpreter import interpretar_grafico
-                    contexto_radar = {
-                        'nome_aluno': nome_selecionado,
-                        'total_alunos': len(df_usuario),
-                        'media_turma': df_usuario['resultado_final'].mean()
-                    }
-                    interpretacao = interpretar_grafico('radar_comparacao', contexto_radar)
-                    st.info(f"💡 **Interpretação IA**: {interpretacao}")
-                except Exception as e:
-                    interpretacao = f"""
-                    Este gráfico radar compara o desempenho de {nome_selecionado} com a média da turma. 
-                    Áreas onde o aluno está acima da média (linha azul acima da rosa) indicam pontos fortes.
-                    Áreas abaixo da média podem indicar necessidades de apoio pedagógico.
-                    """
-                    st.info(f"💡 **Interpretação**: {interpretacao}")
-            elif usar_ia and 'openai_key' in st.session_state and not st.session_state.get('api_valida', False):
-                st.warning("⚠️ Chave OpenAI configurada mas não testada. Teste a chave na sidebar.")
-                interpretacao = f"""
-                Este gráfico radar compara o desempenho de {nome_selecionado} com a média da turma. 
-                Áreas onde o aluno está acima da média (linha azul acima da rosa) indicam pontos fortes.
-                Áreas abaixo da média podem indicar necessidades de apoio pedagógico.
-                """
-                st.info(f"💡 **Interpretação**: {interpretacao}")
-            else:
-                interpretacao = f"""
-                Este gráfico radar compara o desempenho de {nome_selecionado} com a média da turma. 
-                Áreas onde o aluno está acima da média (linha azul acima da rosa) indicam pontos fortes.
-                Áreas abaixo da média podem indicar necessidades de apoio pedagógico.
-                """
-                st.info(f"💡 **Interpretação**: {interpretacao}")
+            from .openai_interpreter import gerar_interpretacao_traduzida
+            contexto_radar = {
+                'nome_aluno': nome_selecionado,
+                'total_alunos': len(df_usuario),
+                'media_turma': df_usuario['resultado_final'].mean()
+            }
+            interpretacao = gerar_interpretacao_traduzida('radar_comparacao', contexto_radar)
+            # Adicionar informações específicas do aluno
+            interpretacao = interpretacao.replace("do aluno selecionado", f"de {nome_selecionado}")
+            st.info(f"💡 **Interpretação**: {interpretacao}")
         else:
             st.warning("Não foi possível criar o gráfico radar para este aluno.")
     else:

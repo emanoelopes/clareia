@@ -1,215 +1,13 @@
 """
-Módulo para interpretação de gráficos via OpenAI
+Módulo para interpretação de gráficos
 Gera insights em linguagem acessível para educadores
 """
 
 import streamlit as st
-import openai
 from typing import Dict, Any
-import time
-
-def verificar_api_key(api_key: str) -> bool:
-    """Verifica se a chave da API OpenAI é válida testando uma chamada simples"""
-    try:
-        # Usar o cliente OpenAI moderno
-        client = openai.OpenAI(api_key=api_key)
-        
-        # Fazer uma chamada de teste simples
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": "Teste"}],
-            max_tokens=5,
-            temperature=0.1
-        )
-        
-        # Se chegou até aqui, a chave é válida
-        return True
-        
-    except Exception as e:
-        # Capturar qualquer erro (AuthenticationError, RateLimitError, etc.)
-        return False
-
-def inicializar_estado_api():
-    """Inicializa o estado da API se necessário e testa chave existente se não foi testada"""
-    if 'openai_key' in st.session_state:
-        if 'api_valida' not in st.session_state:
-            # Testar automaticamente se ainda não foi testada nesta sessão
-            # Usar uma flag para evitar múltiplos testes desnecessários
-            if 'api_testando' not in st.session_state:
-                st.session_state.api_testando = True
-                try:
-                    st.session_state.api_valida = verificar_api_key(st.session_state.openai_key)
-                except:
-                    st.session_state.api_valida = False
-        # Resetar flag de teste se chave foi validada
-        if st.session_state.get('api_valida', False):
-            st.session_state.api_testando = False
-
-def configurar_openai_key():
-    """Permite usuário configurar sua própria chave OpenAI"""
-    # Inicializar estado se necessário
-    inicializar_estado_api()
-    
-    with st.sidebar:
-        st.markdown("### 🔑 Configuração OpenAI")
-        st.markdown("*Para interpretação automática dos gráficos*")
-        
-        # Opção para desabilitar IA
-        usar_ia = st.checkbox(
-            "🤖 Usar IA para interpretação dos gráficos",
-            value=True,
-            help="Desmarque se preferir interpretações estáticas"
-        )
-        
-        if usar_ia:
-            api_key = st.text_input(
-                "Cole sua API Key:",
-                type="password",
-                placeholder="sk-...",
-                help="Obtenha sua chave em https://platform.openai.com/api-keys"
-            )
-            
-            if st.button("💾 Salvar Chave", type="primary"):
-                if api_key and api_key.startswith('sk-'):
-                    # Verificar se a chave é válida testando a API
-                    with st.spinner("🔍 Verificando chave da API..."):
-                        is_valid = verificar_api_key(api_key)
-                        if is_valid:
-                            st.session_state.openai_key = api_key
-                            st.session_state.api_valida = True
-                            st.session_state.interpretacoes_cache = {}  # Limpar cache
-                            st.success("✅ Chave válida e salva com sucesso!")
-                            # Forçar atualização da página
-                            time.sleep(0.5)
-                            st.rerun()
-                        else:
-                            st.session_state.api_valida = False
-                            st.error("❌ Chave inválida ou sem créditos. Verifique sua API key.")
-                else:
-                    st.error("❌ Chave inválida. Deve começar com 'sk-'")
-            
-            if 'openai_key' in st.session_state:
-                if st.session_state.get('api_valida', False):
-                    st.success("🔓 Chave OpenAI válida e ativa")
-                else:
-                    st.warning("⚠️ Chave OpenAI configurada mas não testada")
-                    if st.button("🔄 Testar Chave Novamente", type="secondary"):
-                        with st.spinner("🔍 Testando chave existente..."):
-                            if verificar_api_key(st.session_state.openai_key):
-                                st.session_state.api_valida = True
-                                st.success("✅ Chave validada com sucesso!")
-                                st.rerun()
-                            else:
-                                st.session_state.api_valida = False
-                                st.error("❌ Chave inválida. Configure uma nova chave.")
-        else:
-            st.info("📝 Interpretações estáticas serão usadas")
-            # Limpar chave se desabilitado
-            if 'openai_key' in st.session_state:
-                del st.session_state.openai_key
-        
-        # Salvar preferência do usuário
-        st.session_state.usar_ia = usar_ia
-        
-        st.markdown("---")
-        st.markdown("#### 💡 Como usar:")
-        if usar_ia:
-            st.markdown("""
-            1. ✅ Configure sua chave OpenAI acima
-            2. 📥 Baixe o template Excel
-            3. 📝 Preencha com dados dos alunos
-            4. 📤 Faça upload para análise
-            5. 🤖 Receba interpretações automáticas
-            """)
-        else:
-            st.markdown("""
-            1. 📥 Baixe o template Excel
-            2. 📝 Preencha com dados dos alunos
-            3. 📤 Faça upload para análise
-            4. 📊 Visualize gráficos e métricas
-            """)
-        
-        # Rodapé padrão
-        st.markdown("---")
-        st.markdown("### ℹ️ Sobre o Sistema")
-        st.caption("""
-        **SIDA - Sistema Inteligente de Análise Educacional**
-        
-        Mestrado em Tecnologia Educacional  
-        Programa de Pós-Graduação em Tecnologias Educacionais (PPGTE)  
-        Instituto UFC Virtual (IUVI)  
-        Universidade Federal do Ceará (UFC)
-        
-        Versão 0.1.1 - 2025
-        """)
-
-def interpretar_grafico(tipo_grafico: str, dados_contexto: Dict[str, Any]) -> str:
-    """
-    Gera interpretação do gráfico via OpenAI com cache inteligente
-    
-    Args:
-        tipo_grafico: 'distribuicao', 'correlacao', 'comparacao', etc.
-        dados_contexto: Dados estatísticos do gráfico
-    
-    Returns:
-        Texto de interpretação em português para gestores/professores
-    """
-    if 'openai_key' not in st.session_state:
-        return "⚠️ Configure sua chave OpenAI na sidebar para interpretação automática."
-    
-    # Verificar se API é válida
-    if not st.session_state.get('api_valida', False):
-        return "⚠️ Chave OpenAI não foi testada. Configure uma chave válida na sidebar."
-    
-    # Inicializar cache se não existir
-    if 'interpretacoes_cache' not in st.session_state:
-        st.session_state.interpretacoes_cache = {}
-    
-    # Criar chave única para o cache baseada no tipo e dados
-    cache_key = f"{tipo_grafico}_{hash(str(dados_contexto))}"
-    
-    # Verificar se já existe no cache
-    if cache_key in st.session_state.interpretacoes_cache:
-        return st.session_state.interpretacoes_cache[cache_key]
-    
-    # Configurar OpenAI
-    client = openai.OpenAI(api_key=st.session_state.openai_key)
-    
-    prompt = f"""
-    Você é um especialista em análise educacional. Interprete o seguinte gráfico
-    de forma clara e objetiva para gestores escolares e professores.
-    
-    Tipo de gráfico: {tipo_grafico}
-    Dados: {dados_contexto}
-    
-    Forneça uma interpretação em 1 parágrafo (máximo 4 linhas) focando em:
-    - O que o gráfico mostra
-    - Implicações práticas para educadores
-    - Ações recomendadas (se aplicável)
-    
-    Use linguagem acessível, evite jargões técnicos.
-    """
-    
-    try:
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=200,
-            temperature=0.7
-        )
-        
-        interpretacao = response.choices[0].message.content
-        
-        # Salvar no cache
-        st.session_state.interpretacoes_cache[cache_key] = interpretacao
-        
-        return interpretacao
-        
-    except Exception as e:
-        return f"⚠️ Erro ao gerar interpretação: {str(e)}"
 
 def gerar_interpretacao_traduzida(tipo_grafico: str, dados: Dict[str, Any]) -> str:
-    """Gera interpretação em português para educadores (sem OpenAI)"""
+    """Gera interpretação em português para educadores"""
     
     interpretacoes = {
         'distribuicao_resultados': """
@@ -251,6 +49,38 @@ def gerar_interpretacao_traduzida(tipo_grafico: str, dados: Dict[str, Any]) -> s
         Mostra a atividade online dos alunos. Alunos mais ativos na plataforma
         tendem a ter melhor desempenho. Use para identificar alunos que precisam
         de incentivo para usar recursos digitais.
+        """,
+        
+        'histograma_notas': """
+        📊 **Histograma de Distribuição das Notas**
+        
+        Este gráfico mostra a distribuição das notas finais da turma. A média e mediana
+        indicam o desempenho central. Use para identificar padrões de desempenho e
+        propor estratégias de apoio pedagógico quando necessário.
+        """,
+        
+        'distribuicao_nota_2bim': """
+        📈 **Distribuição das Notas do 2º Bimestre**
+        
+        Este gráfico mostra a distribuição das notas do 2º bimestre. Notas baixas podem
+        indicar necessidade de reforço pedagógico. Use para identificar alunos que
+        precisam de apoio adicional.
+        """,
+        
+        'grafico_linhas_regiao': """
+        📊 **Análise por Região**
+        
+        Este gráfico mostra a média das notas finais por região, categorizada por nível de faltas.
+        Linhas mais altas indicam melhor desempenho. Use para identificar padrões regionais
+        e a relação entre frequência e desempenho acadêmico.
+        """,
+        
+        'radar_comparacao': """
+        🎯 **Gráfico Radar - Comparação Individual**
+        
+        Este gráfico radar compara o desempenho do aluno selecionado com a média da turma.
+        Áreas onde o aluno está acima da média indicam pontos fortes. Áreas abaixo da média
+        podem indicar necessidades de apoio pedagógico.
         """
     }
     
@@ -382,63 +212,16 @@ def traduzir_rotulos_graficos(tipo_grafico: str, dados_contexto: Dict[str, Any])
 
 def criar_sidebar_landpage():
     """Sidebar limpa e focada para a landing page"""
-    # Inicializar estado se necessário
-    inicializar_estado_api()
-    
-    with st.sidebar:
-        st.markdown("### 🔑 Configuração OpenAI")
-        st.markdown("*Para interpretação automática dos gráficos*")
-        
-        api_key = st.text_input(
-            "Cole sua API Key:",
-            type="password",
-            placeholder="sk-...",
-            help="Obtenha sua chave em https://platform.openai.com/api-keys"
-        )
-        
-        if st.button("💾 Salvar Chave", type="primary"):
-            if api_key and api_key.startswith('sk-'):
-                # Verificar se a chave é válida testando a API
-                with st.spinner("🔍 Verificando chave da API..."):
-                    is_valid = verificar_api_key(api_key)
-                    if is_valid:
-                        st.session_state.openai_key = api_key
-                        st.session_state.api_valida = True
-                        st.session_state.interpretacoes_cache = {}  # Limpar cache
-                        st.success("✅ Chave válida e salva com sucesso!")
-                        time.sleep(0.5)
-                        st.rerun()
-                    else:
-                        st.session_state.api_valida = False
-                        st.error("❌ Chave inválida ou sem créditos. Verifique sua API key.")
-            else:
-                st.error("❌ Chave inválida. Deve começar com 'sk-'")
-        
-        if 'openai_key' in st.session_state:
-            if st.session_state.get('api_valida', False):
-                st.success("🔓 Chave OpenAI válida e ativa")
-            else:
-                st.warning("⚠️ Chave OpenAI configurada mas não testada")
-                if st.button("🔄 Testar Chave Novamente", type="secondary"):
-                    with st.spinner("🔍 Testando chave existente..."):
-                        if verificar_api_key(st.session_state.openai_key):
-                            st.session_state.api_valida = True
-                            st.success("✅ Chave validada com sucesso!")
-                            st.rerun()
-                        else:
-                            st.session_state.api_valida = False
-                            st.error("❌ Chave inválida. Configure uma nova chave.")
-        
-        st.markdown("---")
+    with st.sidebar:        
         st.markdown("#### 💡 Como usar:")
         st.markdown("""
-        1. Configure sua chave OpenAI acima
-        2. Baixe o template Excel
-        3. Preencha com dados dos alunos
-        4. Faça upload para análise
+        1. 📥 Baixe o template Excel
+        2. 📝 Preencha com dados dos alunos
+        3. 📤 Faça upload para análise
+        4. 📊 Visualize gráficos e métricas
         """)
         
-        # Rodapé - apenas badges de status
+        # Rodapé
         criar_rodape_sidebar()
 
 def criar_sidebar_padrao():
@@ -446,22 +229,10 @@ def criar_sidebar_padrao():
     with st.sidebar:
         st.markdown("### 📊 Navegação")
         st.markdown("""
-        - 🏠 **Home**: Análise Customizada
+        - 🏠 **Home**: Análise Consolidada
         - 📊 **Painel Analítico**: Visão Consolidada
-        - 📈 **Análise Exploratória**
-          - Autosserviço
+        - 📈 **Autosserviço**: Análise Exploratória
         """)
-        
-        st.markdown("---")
-        st.markdown("### 🔑 OpenAI")
-        
-        if 'openai_key' in st.session_state:
-            st.success("✅ API Key configurada")
-            if st.button("🔄 Reconfigurar"):
-                del st.session_state.openai_key
-                st.rerun()
-        else:
-            st.warning("⚠️ Configure na página inicial")
         
         # Rodapé padrão (mesmo em todas as páginas)
         criar_rodape_sidebar()
@@ -471,14 +242,14 @@ def criar_rodape_sidebar():
     st.markdown("---")
     st.markdown("### ℹ️ Sobre o Sistema")
     st.caption("""
-    **SIDA - Sistema Inteligente de Análise Educacional**
+    **CLAREIA - Sistema de Análise de Dados Educacionais**
     
     Mestrado em Tecnologia Educacional  
     Programa de Pós-Graduação em Tecnologias Educacionais (PPGTE)  
     Instituto UFC Virtual (IUVI)  
     Universidade Federal do Ceará (UFC)
     
-    Versão 0.1.1 - 2025
+    Versão 0.1.1 - 2026
     """)
     
     # Badges de status do projeto

@@ -1,7 +1,7 @@
 #!/bin/bash
 # Script para configurar o ambiente em qualquer máquina
 
-echo "🚀 Configurando ambiente SIDA..."
+echo "🚀 Configurando o sistema Clareia..."
 
 # Verificar Python 3.9+
 python3 --version

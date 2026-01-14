@@ -8,7 +8,7 @@ import streamlit as st
 import pandas as pd
 
 def main():
-    st.title("Sistema de Identificação de Dificuldades Acadêmicas (SIDA)")
+    st.title("Clareia - Análise de Dados Educacionais")
     
     # Criando o DataFrame
     df, pre_reqs = create_data()
