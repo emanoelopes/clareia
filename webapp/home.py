@@ -166,7 +166,7 @@ if 'analise_resultados' in st.session_state and 'user_data_uploaded' in st.sessi
     # Exibir resultados salvos (título já está na função exibir_resultados_com_ia)
     exibir_resultados_com_ia(st.session_state.analise_resultados, st.session_state.user_data_uploaded)
 
-    # Seção 4: Análise Exploratória Interativa (Autosserviço)
+    # Seção 4: Análise Exploratória Interativa
     st.markdown("---")
     st.markdown("### 🔍 Análise Exploratória Interativa")
     
@@ -183,7 +183,7 @@ if 'analise_resultados' in st.session_state and 'user_data_uploaded' in st.sessi
     st.markdown("#### Você deseja realizar uma análise exploratória interativa dos dados enviados?")
 
     if st.button("🚀 Sim, quero explorar os dados interativamente", type="primary"):
-        st.switch_page("pages/3_Autosserviço.py")
+        st.switch_page("pages/3_Análise_Exploratória_Interativa.py")
 
 # Rodapé informativo
 st.markdown("---")

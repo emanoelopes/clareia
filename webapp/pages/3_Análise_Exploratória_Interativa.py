@@ -17,7 +17,7 @@ import streamlit as st
 from src.openai_interpreter import criar_rodape_sidebar
 
 st.set_page_config(
-    page_title="Análise Exploratória - Autosserviço",
+    page_title="Análise Exploratória Interativa",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded",

@@ -231,7 +231,7 @@ def criar_sidebar_padrao():
         st.markdown("""
         - 🏠 **Home**: Análise Consolidada
         - 📊 **Painel Analítico**: Visão Consolidada
-        - 📈 **Autosserviço**: Análise Exploratória
+        - 📈 **Análise Exploratória**: Interativa (PygWalker)
         """)
         
         # Rodapé padrão (mesmo em todas as páginas)
@@ -249,7 +249,7 @@ def criar_rodape_sidebar():
     Instituto UFC Virtual (IUVI)  
     Universidade Federal do Ceará (UFC)
     
-    Versão 0.1.1 - 2026
+    Versão 1.1.0 - 2026
     """)
     
     # Badges de status do projeto
@@ -259,6 +259,6 @@ def criar_rodape_sidebar():
         <img src="https://img.shields.io/badge/Streamlit-1.28%2B-FF4B4B?logo=streamlit&logoColor=white" alt="Streamlit"/>
         <img src="https://img.shields.io/badge/Docker-Supported-2496ED?logo=docker&logoColor=white" alt="Docker"/>
         <img src="https://img.shields.io/badge/License-GPL--3.0-green" alt="License GPL-3.0"/>
-        <img src="https://img.shields.io/badge/Version-0.1.1-orange" alt="Version"/>
+        <img src="https://img.shields.io/badge/Version-1.1.0-orange" alt="Version"/>
     </div>
     """, unsafe_allow_html=True)
