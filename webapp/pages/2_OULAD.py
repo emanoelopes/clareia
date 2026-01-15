@@ -255,7 +255,7 @@ def treinar_modelo_oulad(X_train, y_train):
     y_train_cleaned = y_train[~nan_rows_train].copy()
     
     # Identify categorical and numerical columns
-    categorical_cols = X_train_cleaned.select_dtypes(include='object').columns
+    categorical_cols = X_train_cleaned.select_dtypes(include=['object', 'category']).columns
     numerical_cols = X_train_cleaned.select_dtypes(include=np.number).columns
     
     # Create a column transformer to apply different preprocessing steps to different column types
