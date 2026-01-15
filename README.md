@@ -1,8 +1,6 @@
-# Clareia: Sistema de Identifcação de Dificuldades de Aprendizagem
+# Clareia: Sistema de Análide de Dados Educacionais
 
-Sistema de identificação de dificuldades de aprendzagem por meio de IA.
-
-Produto Educacional Digital para compor os requisistos exigidos pelo Mestrado Profissional em Tecnologia Educacional.
+Produto Educacional Digital para compor os requisistos exigidos pelo Mestrado Profissional em Tecnologia Educacional da Universidade Federal do Ceará (UFC).
 
 ## 🐳 Execução com Docker (Recomendado)
 
