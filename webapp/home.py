@@ -182,9 +182,22 @@ if 'analise_resultados' in st.session_state and 'user_data_uploaded' in st.sessi
 
     st.markdown("#### Você deseja realizar uma análise exploratória interativa dos dados enviados?")
 
-    if st.checkbox("Sim, quero explorar os dados interativamente", key="show_pygwalker"):
+    # Inicializa estado se não existir
+    if 'show_pygwalker' not in st.session_state:
+        st.session_state.show_pygwalker = False
+
+    if not st.session_state.show_pygwalker:
+        if st.button("🚀 Sim, quero explorar os dados interativamente", type="primary"):
+            st.session_state.show_pygwalker = True
+            st.rerun()
+
+    if st.session_state.show_pygwalker:
          st.markdown("### 🖥️ Espaço de Análise Interativa")
          st.caption("Arraste as variáveis (colunas) para os eixos X e Y para começar a visualizar.")
+         
+         if st.button("❌ Fechar Análise Interativa"):
+             st.session_state.show_pygwalker = False
+             st.rerun()
          
          # Inicializa o renderizador do Pygwalker com cache para performance
          @st.cache_resource
