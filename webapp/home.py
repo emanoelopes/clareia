@@ -171,7 +171,7 @@ if 'analise_resultados' in st.session_state and 'user_data_uploaded' in st.sessi
     st.markdown("### 🔍 Análise Exploratória Interativa")
     
     st.info("""
-    **Sobre a Análise Interativa (Pygwalker):**
+    **Sobre a Análise Exploratória Interativa:**
     
     Esta ferramenta permite que você explore seus dados livremente, similar ao **Tableau** ou **Power BI**, mas diretamente aqui no navegador.
     
