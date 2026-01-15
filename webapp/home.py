@@ -21,6 +21,7 @@ from src.utilidades import (
     exibir_resultados_com_ia,
     converter_template_para_excel
 )
+from pygwalker.api.streamlit import StreamlitRenderer
 from src.openai_interpreter import criar_sidebar_landpage
 
 # Configuração da página
@@ -164,6 +165,36 @@ if 'analise_resultados' in st.session_state and 'user_data_uploaded' in st.sessi
     st.markdown("---")
     # Exibir resultados salvos (título já está na função exibir_resultados_com_ia)
     exibir_resultados_com_ia(st.session_state.analise_resultados, st.session_state.user_data_uploaded)
+
+    # Seção 4: Análise Exploratória Interativa (Autosserviço)
+    st.markdown("---")
+    st.markdown("### 🔍 Análise Exploratória Interativa")
+    
+    st.info("""
+    **Sobre a Análise Interativa (Pygwalker):**
+    
+    Esta ferramenta permite que você explore seus dados livremente, similar ao **Tableau** ou **Power BI**, mas diretamente aqui no navegador.
+    
+    - 🖱️ **Arraste e Solte**: Crie gráficos arrastando colunas.
+    - 📊 **Visualização Dinâmica**: Explore tendências e padrões instantaneamente.
+    - 🔎 **Filtragem Avançada**: Filtre seus dados visualmente para focar no que importa.
+    """)
+
+    st.markdown("#### Você deseja realizar uma análise exploratória interativa dos dados enviados?")
+
+    if st.checkbox("Sim, quero explorar os dados interativamente", key="show_pygwalker"):
+         st.markdown("### 🖥️ Espaço de Análise Interativa")
+         st.caption("Arraste as variáveis (colunas) para os eixos X e Y para começar a visualizar.")
+         
+         # Inicializa o renderizador do Pygwalker com cache para performance
+         @st.cache_resource
+         def get_pyg_renderer(dataframe):
+             return StreamlitRenderer(dataframe, spec="./gw_config.json", spec_io_mode="RW")
+         
+         renderer = get_pyg_renderer(st.session_state.user_data_uploaded)
+         
+         # Renderiza a interface do explorador
+         renderer.explorer()
 
 # Rodapé informativo
 st.markdown("---")
