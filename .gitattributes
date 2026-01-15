@@ -13,3 +13,4 @@ data/**/*.csv filter=lfs diff=lfs merge=lfs -text
 data/**/*.xlsx filter=lfs diff=lfs merge=lfs -text
 datasets/oulad_data/*.csv filter=lfs diff=lfs merge=lfs -text
 datasets/uci_data/*.csv filter=lfs diff=lfs merge=lfs -text
+*.zip filter=lfs diff=lfs merge=lfs -text
