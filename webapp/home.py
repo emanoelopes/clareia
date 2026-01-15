@@ -182,32 +182,8 @@ if 'analise_resultados' in st.session_state and 'user_data_uploaded' in st.sessi
 
     st.markdown("#### Você deseja realizar uma análise exploratória interativa dos dados enviados?")
 
-    # Inicializa estado se não existir
-    if 'show_pygwalker' not in st.session_state:
-        st.session_state.show_pygwalker = False
-
-    if not st.session_state.show_pygwalker:
-        if st.button("🚀 Sim, quero explorar os dados interativamente", type="primary"):
-            st.session_state.show_pygwalker = True
-            st.rerun()
-
-    if st.session_state.show_pygwalker:
-         st.markdown("### 🖥️ Espaço de Análise Interativa")
-         st.caption("Arraste as variáveis (colunas) para os eixos X e Y para começar a visualizar.")
-         
-         if st.button("❌ Fechar Análise Interativa"):
-             st.session_state.show_pygwalker = False
-             st.rerun()
-         
-         # Inicializa o renderizador do Pygwalker com cache para performance
-         @st.cache_resource
-         def get_pyg_renderer(dataframe):
-             return StreamlitRenderer(dataframe, spec="./gw_config.json", spec_io_mode="RW")
-         
-         renderer = get_pyg_renderer(st.session_state.user_data_uploaded)
-         
-         # Renderiza a interface do explorador
-         renderer.explorer()
+    if st.button("🚀 Sim, quero explorar os dados interativamente", type="primary"):
+        st.switch_page("pages/3_Autosserviço.py")
 
 # Rodapé informativo
 st.markdown("---")
