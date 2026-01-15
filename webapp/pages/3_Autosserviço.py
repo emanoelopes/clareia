@@ -1,5 +1,9 @@
 import sys
+import warnings
 from pathlib import Path
+
+# Suppress Streamlit deprecation warning
+warnings.filterwarnings("ignore", message=".*st.experimental_user.*")
 
 # Adicionar o diretório webapp ao path do Python
 webapp_dir = Path(__file__).parent.parent
